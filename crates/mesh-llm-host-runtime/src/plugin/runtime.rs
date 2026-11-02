@@ -10,7 +10,7 @@ use super::{
 use crate::runtime_data::RuntimeDataProducer;
 use anyhow::{Context, Result, bail};
 use mesh_llm_plugin::{MeshVisibility, STARTUP_DISABLED_ERROR_CODE};
-use rmcp::model::{InitializeRequestParams, ServerInfo};
+use rmcp::model::{InitializeRequestParams, ServerConfig};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -25,7 +25,7 @@ pub(crate) struct ExternalPlugin {
     instance_id: String,
     host_mode: PluginHostMode,
     summary: Arc<Mutex<PluginSummary>>,
-    server_info: Arc<Mutex<Option<ServerInfo>>>,
+    server_info: Arc<Mutex<Option<ServerConfig>>>,
     manifest: Arc<Mutex<Option<proto::PluginManifest>>>,
     runtime: Arc<Mutex<Option<PluginRuntime>>>,
     mesh_tx: mpsc::Sender<super::PluginMeshEvent>,
@@ -409,7 +409,7 @@ impl ExternalPlugin {
             .initialize_runtime(generation, outbound_tx, pending)
             .await?;
 
-        let server_info: ServerInfo =
+        let server_info: ServerConfig =
             serde_json::from_str(&init.server_info_json).with_context(|| {
                 format!(
                     "Plugin '{}' returned invalid server_info_json",
@@ -439,7 +439,7 @@ impl ExternalPlugin {
         Ok(())
     }
 
-    pub(crate) async fn server_info(&self) -> Result<ServerInfo> {
+    pub(crate) async fn server_info(&self) -> Result<ServerConfig> {
         self.ensure_running().await?;
         self.server_info
             .lock()
